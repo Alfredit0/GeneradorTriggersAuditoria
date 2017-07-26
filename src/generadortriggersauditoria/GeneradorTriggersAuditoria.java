@@ -101,7 +101,7 @@ public class GeneradorTriggersAuditoria {
     }
 
     public static void escribirArchivo(String tableName, ResultSetMetaData rsmd) throws IOException, SQLException {
-        String ruta = "C:\\Users\\Meltsan\\Desktop\\MELTSAN\\AUDITORIA_TRIGGERS\\TRIGGER_" + tableName + ".sql";
+        String ruta = "C:\\Users\\VICENTE\\Desktop\\MedicalRecord\\Triggers\\TRIGGER_" + tableName + ".sql";
         File archivo = new File(ruta);
         BufferedWriter bw;
         StringBuilder tg = new StringBuilder();
@@ -180,17 +180,17 @@ public class GeneradorTriggersAuditoria {
                 + "	-------------------------------------------------------------------------------------------\n"
                 + "	ELSIF  (TG_OP = 'UPDATE') THEN\n"
                 + "			INSERT INTO mr_admin_desarrollo.mr_audit_tables(cd_year, cd_table, cd_status, ds_table, user_updated,date_updated, user_inserted, date_inserted)\n"
-                + "			VALUES (yr, TG_TABLE_NAME,'A', TG_TABLE_NAME, current_user,now(),current_user,now());");
+                + "			VALUES (yr, TG_TABLE_NAME,'A', TG_TABLE_NAME, current_user,now(),current_user,now());\n\n");
 
         for (int i = 1; i <= cols; i++) {
             String colName = rsmd.getColumnName(i);
             String colType = rsmd.getColumnTypeName(i);
-            tg.append("		IF (NEW." + colName + " <> OLD." + colName + ") THEN\n"
+            tg.append("		IF ((NEW." + colName + " <> OLD." + colName + ")  OR (NEW." + colName + " is not NULL and OLD." + colName + " is NULL)) THEN\n"
                     + "			\n"
                     + "			INSERT INTO mr_admin_desarrollo.mr_audit_details(cd_year, id_transaction, cd_table, regid, user_audit, cd_transaction_type, date_hour, current_value, previous_value, \n"
                     + "			column_name, user_updated, date_updated, user_inserted, date_inserted)\n"
                     + "			VALUES (yr,seq,  TG_TABLE_NAME, TG_RELID, current_user, 'U', now(), NEW." + colName + ", OLD." + colName + ", '" + colName + "' , current_user, NOW(), current_user, NOW());\n"
-                    + "		 END IF;");
+                    + "		 END IF;\n");
         }
         tg.append("	RETURN NEW;\n"
                 + "	END IF;\n"
