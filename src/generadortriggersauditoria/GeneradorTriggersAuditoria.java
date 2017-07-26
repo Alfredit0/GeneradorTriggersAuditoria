@@ -24,10 +24,10 @@ import java.util.logging.Logger;
 public class GeneradorTriggersAuditoria {
 
     private static Connection conn;
-    private static String host = "jdbc:postgresql://localhost:5432/";
+    private static String host = "jdbc:postgresql://dev-admin.meltsan.com:5432/";
     private static String db = "mr_admin";
     private static String user = "postgres";
-    private static String password = "root";
+    private static String password = "";
     private static String tableName = "mr_user_doctors";
     private static String sqlQuery;
 
@@ -63,7 +63,7 @@ public class GeneradorTriggersAuditoria {
 
         for (String table : tablasAuditar) {
             System.out.println("tabla a auditar : " + table);
-            sqlQuery = "Select * FROM mr_admin_desarrollo." + table + " LIMIT 1";
+            sqlQuery = "Select * FROM mr_admin_05052017." + table + " LIMIT 1";
             try {
                 ResultSet rs = conn.createStatement().executeQuery(sqlQuery);
                 ResultSetMetaData rsmd = rs.getMetaData();
@@ -83,13 +83,13 @@ public class GeneradorTriggersAuditoria {
             sqlQuery = "SELECT CONSTRAINT_NAME, CONSTRAINT_TYPE\n"
                     + "FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS\n"
                     + "WHERE TABLE_NAME = '" + tableName + "' \n"
-                    + "    and CONSTRAINT_SCHEMA = 'mr_admin_desarrollo' \n"
-                    + "    and CONSTRAINT_SCHEMA = 'mr_admin_desarrollo' \n"
+                    + "    and CONSTRAINT_SCHEMA = 'mr_admin_05052017' \n"
+                    + "    and CONSTRAINT_SCHEMA = 'mr_admin_05052017' \n"
                     + "    and CONSTRAINT_TYPE = 'FOREIGN KEY'";
             rs = conn.createStatement().executeQuery(sqlQuery);
             System.out.println("CONSTRAINS DE LA TABLA: " + tableName);
             while (rs.next()) {
-                sqlQueryDropC = " alter table mr_admin_desarrollo." + tableName + "\n"
+                sqlQueryDropC = " alter table mr_admin_05052017." + tableName + "\n"
                         + "  drop constraint " + rs.getString(1) + ";";
                 int r = conn.createStatement().executeUpdate(sqlQueryDropC);
                 if (r != 1) {
@@ -120,20 +120,20 @@ public class GeneradorTriggersAuditoria {
                 + "BEGIN\n"
                 + "  --obtiene las tablas indicadas para ser auditadas\n"
                 + "  ds_table := (select B.attribute_value_01\n"
-                + "		  FROM mr_admin_desarrollo.mr_catalogues A, mr_admin_desarrollo.mr_catalogues_values B\n"
+                + "		  FROM mr_admin_05052017.mr_catalogues A, mr_admin_05052017.mr_catalogues_values B\n"
                 + "		  where A.id_catalogue = B.id_catalogue and \n"
                 + "		  B.attribute_value_02 ='S' and\n"
                 + "		  B.attribute_value_01 in (select attribute_value_01 \n"
-                + "					from mr_admin_desarrollo.mr_catalogues_values\n"
+                + "					from mr_admin_05052017.mr_catalogues_values\n"
                 + "					where attribute_value_01 like '%TG_TABLE_NAME%')\n"
                 + "		);\n"
                 + "  ds_table := ('ds_table');\n"
                 + "\n"
                 + " IF (ds_table is not NULL AND ds_table <>' ') THEN\n");
-        tg.append("\n	seq:= (select nextval('mr_admin_desarrollo.seq_mr_audit_tables'));\n"
+        tg.append("\n	seq:= (select nextval('mr_admin_05052017.seq_mr_audit_tables'));\n"
                 + "	yr := (cast((to_char(NOW()::date,'YYYY') ) as integer));");
         tg.append("\n	IF (TG_OP = 'INSERT') THEN\n"
-                + "			INSERT INTO mr_admin_desarrollo.mr_audit_tables(cd_year, cd_table, cd_status, ds_table, user_updated,date_updated, user_inserted, date_inserted)\n"
+                + "			INSERT INTO mr_admin_05052017.mr_audit_tables(cd_year, cd_table, cd_status, ds_table, user_updated,date_updated, user_inserted, date_inserted)\n"
                 + "			VALUES (yr, TG_TABLE_NAME,'A', TG_TABLE_NAME, NULL,NULL,current_user,now());");
 
         for (int i = 1; i <= cols; i++) {
@@ -145,7 +145,7 @@ public class GeneradorTriggersAuditoria {
                 tg.append("\n		 IF (NEW." + colName + " is not NULL) THEN\n");
             }
             tg.append("\n"
-                    + "			INSERT INTO mr_admin_desarrollo.mr_audit_details(cd_year, id_transaction, cd_table, regid, user_audit, cd_transaction_type, date_hour, current_value, previous_value, \n"
+                    + "			INSERT INTO mr_admin_05052017.mr_audit_details(cd_year, id_transaction, cd_table, regid, user_audit, cd_transaction_type, date_hour, current_value, previous_value, \n"
                     + "			column_name, user_updated, date_updated, user_inserted, date_inserted)\n"
                     + "			VALUES (yr, seq, TG_TABLE_NAME, TG_RELID, current_user, 'I', now(), NEW." + colName + ", NULL, '" + colName + "', NULL, NULL, current_user, NOW());\n"
                     + "		  END IF;");
@@ -156,7 +156,7 @@ public class GeneradorTriggersAuditoria {
                 + "	-------------------------------------------------------------------------------------------\n"
                 + "	ELSIF (TG_OP = 'DELETE') THEN\n"
                 + "--- DELETE\n"
-                + "			INSERT INTO mr_admin_desarrollo.mr_audit_tables(cd_year, cd_table, cd_status, ds_table, user_updated,date_updated, user_inserted, date_inserted)\n"
+                + "			INSERT INTO mr_admin_05052017.mr_audit_tables(cd_year, cd_table, cd_status, ds_table, user_updated,date_updated, user_inserted, date_inserted)\n"
                 + "			VALUES (yr, TG_TABLE_NAME,'A', TG_TABLE_NAME, current_user,now(),current_user,now());");
 
         for (int i = 1; i <= cols; i++) {
@@ -168,7 +168,7 @@ public class GeneradorTriggersAuditoria {
                 tg.append("\n		 IF (OLD." + colName + " is not NULL) THEN\n");
             }
             tg.append("\n"
-                    + "			INSERT INTO mr_admin_desarrollo.mr_audit_details(cd_year, id_transaction, cd_table, regid, user_audit, cd_transaction_type, date_hour, current_value, previous_value, \n"
+                    + "			INSERT INTO mr_admin_05052017.mr_audit_details(cd_year, id_transaction, cd_table, regid, user_audit, cd_transaction_type, date_hour, current_value, previous_value, \n"
                     + "			column_name, user_updated, date_updated, user_inserted, date_inserted)\n"
                     + "			VALUES (yr,seq,  TG_TABLE_NAME, TG_RELID, current_user, 'D', now(), NULL, OLD." + colName + ", '" + colName + "' , current_user, NOW(), current_user, NOW());	\n"
                     + "		\n"
@@ -179,7 +179,7 @@ public class GeneradorTriggersAuditoria {
                 + "	--UPDATE\n"
                 + "	-------------------------------------------------------------------------------------------\n"
                 + "	ELSIF  (TG_OP = 'UPDATE') THEN\n"
-                + "			INSERT INTO mr_admin_desarrollo.mr_audit_tables(cd_year, cd_table, cd_status, ds_table, user_updated,date_updated, user_inserted, date_inserted)\n"
+                + "			INSERT INTO mr_admin_05052017.mr_audit_tables(cd_year, cd_table, cd_status, ds_table, user_updated,date_updated, user_inserted, date_inserted)\n"
                 + "			VALUES (yr, TG_TABLE_NAME,'A', TG_TABLE_NAME, current_user,now(),current_user,now());\n\n");
 
         for (int i = 1; i <= cols; i++) {
@@ -187,7 +187,7 @@ public class GeneradorTriggersAuditoria {
             String colType = rsmd.getColumnTypeName(i);
             tg.append("		IF ((NEW." + colName + " <> OLD." + colName + ")  OR (NEW." + colName + " is not NULL and OLD." + colName + " is NULL)) THEN\n"
                     + "			\n"
-                    + "			INSERT INTO mr_admin_desarrollo.mr_audit_details(cd_year, id_transaction, cd_table, regid, user_audit, cd_transaction_type, date_hour, current_value, previous_value, \n"
+                    + "			INSERT INTO mr_admin_05052017.mr_audit_details(cd_year, id_transaction, cd_table, regid, user_audit, cd_transaction_type, date_hour, current_value, previous_value, \n"
                     + "			column_name, user_updated, date_updated, user_inserted, date_inserted)\n"
                     + "			VALUES (yr,seq,  TG_TABLE_NAME, TG_RELID, current_user, 'U', now(), NEW." + colName + ", OLD." + colName + ", '" + colName + "' , current_user, NOW(), current_user, NOW());\n"
                     + "		 END IF;\n");
@@ -205,37 +205,37 @@ public class GeneradorTriggersAuditoria {
 
         tg.append("\n\n\n\n\n");
         //Creando las llamadas al TRIGGER de DELETE desde la Tabla
-        tg.append("-- Trigger: trg_all_" + tableName + "_d on mr_admin_desarrollo." + tableName + "\n"
+        tg.append("-- Trigger: trg_all_" + tableName + "_d on mr_admin_05052017." + tableName + "\n"
                 + "\n"
-                + "DROP TRIGGER IF EXISTS trg_all_" + tableName + "_d ON mr_admin_desarrollo." + tableName + ";\n"
+                + "DROP TRIGGER IF EXISTS trg_all_" + tableName + "_d ON mr_admin_05052017." + tableName + ";\n"
                 + "\n"
                 + "CREATE TRIGGER trg_all_" + tableName + "_d\n"
                 + "  AFTER DELETE\n"
-                + "  ON mr_admin_desarrollo." + tableName + "\n"
+                + "  ON mr_admin_05052017." + tableName + "\n"
                 + "  FOR EACH ROW\n"
                 + "  EXECUTE PROCEDURE public.trg_all_" + tableName + "();");
 
         tg.append("\n\n\n");
         //Creando las llamadas al TRIGGER de INSERT desde la Tabla
-        tg.append("-- Trigger: trg_all_" + tableName + "_i on mr_admin_desarrollo." + tableName + "\n"
+        tg.append("-- Trigger: trg_all_" + tableName + "_i on mr_admin_05052017." + tableName + "\n"
                 + "\n"
-                + "DROP TRIGGER IF EXISTS trg_all_" + tableName + "_i ON mr_admin_desarrollo." + tableName + ";\n"
+                + "DROP TRIGGER IF EXISTS trg_all_" + tableName + "_i ON mr_admin_05052017." + tableName + ";\n"
                 + "\n"
                 + "CREATE TRIGGER trg_all_" + tableName + "_i\n"
                 + "  AFTER INSERT\n"
-                + "  ON mr_admin_desarrollo." + tableName + "\n"
+                + "  ON mr_admin_05052017." + tableName + "\n"
                 + "  FOR EACH ROW\n"
                 + "  EXECUTE PROCEDURE public.trg_all_" + tableName + "();");
 
         tg.append("\n\n\n");
         //Creando las llamadas al TRIGGER de UPDATE desde la Tabla
-        tg.append("-- Trigger: trg_all_" + tableName + "_u on mr_admin_desarrollo." + tableName + "\n"
+        tg.append("-- Trigger: trg_all_" + tableName + "_u on mr_admin_05052017." + tableName + "\n"
                 + "\n"
-                + "DROP TRIGGER IF EXISTS trg_all_" + tableName + "_u ON mr_admin_desarrollo." + tableName + ";\n"
+                + "DROP TRIGGER IF EXISTS trg_all_" + tableName + "_u ON mr_admin_05052017." + tableName + ";\n"
                 + "\n"
                 + "CREATE TRIGGER trg_all_" + tableName + "_u\n"
                 + "  AFTER UPDATE\n"
-                + "  ON mr_admin_desarrollo." + tableName + "\n"
+                + "  ON mr_admin_05052017." + tableName + "\n"
                 + "  FOR EACH ROW\n"
                 + "  EXECUTE PROCEDURE public.trg_all_" + tableName + "();");
         bw.write(tg.toString());
